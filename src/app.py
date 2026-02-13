@@ -80,6 +80,30 @@ activities = {
 }
 
 
+def validate_and_normalize_email(email: str) -> str:
+    """Validate and normalize email address.
+    
+    Args:
+        email: Raw email address string
+        
+    Returns:
+        Normalized email address
+        
+    Raises:
+        HTTPException: If email is invalid or too long
+    """
+    try:
+        _, normalized_email = validate_email(email.strip())
+    except (PydanticCustomError, ValueError):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+    
+    # Validate email length
+    if len(normalized_email) > 254:
+        raise HTTPException(status_code=400, detail="Email address is too long")
+    
+    return normalized_email
+
+
 @app.get("/")
 def root():
     return RedirectResponse(url="/static/index.html")
@@ -94,14 +118,7 @@ def get_activities():
 def signup_for_activity(activity_name: str, email: str):
     """Sign up a student for an activity"""
     # Validate and normalize email
-    try:
-        _, normalized_email = validate_email(email.strip())
-    except (PydanticCustomError, ValueError):
-        raise HTTPException(status_code=400, detail="Invalid email format")
-    
-    # Validate email length
-    if len(normalized_email) > 254:
-        raise HTTPException(status_code=400, detail="Email address is too long")
+    normalized_email = validate_and_normalize_email(email)
     
     # Validate activity exists
     if activity_name not in activities:
@@ -122,10 +139,7 @@ def signup_for_activity(activity_name: str, email: str):
 def unregister_from_activity(activity_name: str, email: str):
     """Unregister a student from an activity"""
     # Validate and normalize email
-    try:
-        _, normalized_email = validate_email(email.strip())
-    except (PydanticCustomError, ValueError):
-        raise HTTPException(status_code=400, detail="Invalid email format")
+    normalized_email = validate_and_normalize_email(email)
     
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")

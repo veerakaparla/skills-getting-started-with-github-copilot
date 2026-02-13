@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
             deleteBtn.setAttribute("data-activity", name);
             deleteBtn.setAttribute("data-email", participant);
             deleteBtn.setAttribute("title", "Unregister");
-            deleteBtn.innerHTML = "&#10005;";
+            deleteBtn.textContent = "×";
             
             // Add event listener directly to the button
             deleteBtn.addEventListener("click", async () => {
