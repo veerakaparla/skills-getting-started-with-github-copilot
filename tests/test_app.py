@@ -4,6 +4,7 @@ Tests for the Mergington High School Activities API
 
 import pytest
 from fastapi.testclient import TestClient
+from urllib.parse import quote
 
 from src.app import app, activities
 
@@ -136,8 +137,9 @@ class TestUnregister:
 
     def test_unregister_not_registered(self, client):
         """Test unregister when not registered returns 400."""
+        activity_name = quote("Programming Class")
         response = client.delete(
-            "/activities/Programming Class/unregister?email=notregistered@mergington.edu"
+            f"/activities/{activity_name}/unregister?email=notregistered@mergington.edu"
         )
         assert response.status_code == 400
         assert "not registered" in response.json()["detail"]
