@@ -110,6 +110,14 @@ class TestSignup:
         assert response.status_code == 400
         assert "Invalid email format" in response.json()["detail"]
 
+    def test_signup_empty_email(self, client):
+        """Test that empty email is rejected."""
+        response = client.post(
+            f"/activities/{quote('Soccer Team')}/signup?email="
+        )
+        assert response.status_code == 400
+        assert "cannot be empty" in response.json()["detail"]
+
     def test_signup_email_normalization(self, client):
         """Test that email is normalized (whitespace trimmed)."""
         email = "  test@mergington.edu  "

@@ -21,6 +21,9 @@ current_dir = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=os.path.join(Path(__file__).parent,
           "static")), name="static")
 
+# Maximum email length according to RFC 5321
+MAX_EMAIL_LENGTH = 254
+
 # In-memory activity database
 activities = {
     "Soccer Team": {
@@ -92,13 +95,19 @@ def validate_and_normalize_email(email: str) -> str:
     Raises:
         HTTPException: If email is invalid or too long
     """
+    # Trim whitespace
+    email = email.strip()
+    
+    if not email:
+        raise HTTPException(status_code=400, detail="Email address cannot be empty")
+    
     try:
-        _, normalized_email = validate_email(email.strip())
+        _, normalized_email = validate_email(email)
     except (PydanticCustomError, ValueError):
         raise HTTPException(status_code=400, detail="Invalid email format")
     
-    # Validate email length
-    if len(normalized_email) > 254:
+    # Validate email length (RFC 5321)
+    if len(normalized_email) > MAX_EMAIL_LENGTH:
         raise HTTPException(status_code=400, detail="Email address is too long")
     
     return normalized_email
