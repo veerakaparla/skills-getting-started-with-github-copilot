@@ -102,6 +102,24 @@ class TestSignup:
         assert response2.status_code == 400
         assert "already signed up" in response2.json()["detail"]
 
+    def test_signup_invalid_email(self, client):
+        """Test that invalid email format is rejected."""
+        response = client.post(
+            f"/activities/{quote('Soccer Team')}/signup?email=invalid-email"
+        )
+        assert response.status_code == 400
+        assert "Invalid email format" in response.json()["detail"]
+
+    def test_signup_email_normalization(self, client):
+        """Test that email is normalized (whitespace trimmed)."""
+        email = "  test@mergington.edu  "
+        response = client.post(f"/activities/{quote('Chess Club')}/signup?email={email}")
+        assert response.status_code == 200
+        
+        # Check that the normalized email (without spaces) is in participants
+        activities_response = client.get("/activities")
+        assert "test@mergington.edu" in activities_response.json()["Chess Club"]["participants"]
+
 
 class TestUnregister:
     """Tests for the DELETE /activities/{activity_name}/unregister endpoint."""
