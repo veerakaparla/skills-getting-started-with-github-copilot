@@ -4,6 +4,7 @@ Tests for the Mergington High School Activities API
 
 import pytest
 from fastapi.testclient import TestClient
+from urllib.parse import quote
 
 from src.app import app, activities
 
@@ -53,6 +54,7 @@ class TestGetActivities:
     def test_activity_has_required_fields(self, client):
         """Test that each activity has all required fields."""
         response = client.get("/activities")
+        assert response.status_code == 200
         data = response.json()
         for name, activity in data.items():
             assert "description" in activity
@@ -67,7 +69,7 @@ class TestSignup:
     def test_signup_success(self, client):
         """Test successful signup for an activity."""
         response = client.post(
-            "/activities/Soccer Team/signup?email=newstudent@mergington.edu"
+            f"/activities/{quote('Soccer Team')}/signup?email=newstudent@mergington.edu"
         )
         assert response.status_code == 200
         assert "newstudent@mergington.edu" in response.json()["message"]
@@ -75,7 +77,7 @@ class TestSignup:
     def test_signup_adds_participant(self, client):
         """Test that signup actually adds the participant to the activity."""
         email = "testuser@mergington.edu"
-        client.post(f"/activities/Chess Club/signup?email={email}")
+        client.post(f"/activities/{quote('Chess Club')}/signup?email={email}")
         
         response = client.get("/activities")
         assert email in response.json()["Chess Club"]["participants"]
@@ -83,7 +85,7 @@ class TestSignup:
     def test_signup_activity_not_found(self, client):
         """Test signup for non-existent activity returns 404."""
         response = client.post(
-            "/activities/Nonexistent Activity/signup?email=test@mergington.edu"
+            f"/activities/{quote('Nonexistent Activity')}/signup?email=test@mergington.edu"
         )
         assert response.status_code == 404
         assert "Activity not found" in response.json()["detail"]
@@ -92,11 +94,11 @@ class TestSignup:
         """Test that duplicate registration is rejected."""
         email = "duplicate@mergington.edu"
         # First signup should succeed
-        response1 = client.post(f"/activities/Art Studio/signup?email={email}")
+        response1 = client.post(f"/activities/{quote('Art Studio')}/signup?email={email}")
         assert response1.status_code == 200
         
         # Second signup should fail
-        response2 = client.post(f"/activities/Art Studio/signup?email={email}")
+        response2 = client.post(f"/activities/{quote('Art Studio')}/signup?email={email}")
         assert response2.status_code == 400
         assert "already signed up" in response2.json()["detail"]
 
@@ -108,11 +110,11 @@ class TestUnregister:
         """Test successful unregistration from an activity."""
         # First register
         email = "tounregister@mergington.edu"
-        client.post(f"/activities/Math Olympiad/signup?email={email}")
+        client.post(f"/activities/{quote('Math Olympiad')}/signup?email={email}")
         
         # Then unregister
         response = client.delete(
-            f"/activities/Math Olympiad/unregister?email={email}"
+            f"/activities/{quote('Math Olympiad')}/unregister?email={email}"
         )
         assert response.status_code == 200
         assert email in response.json()["message"]
@@ -120,8 +122,8 @@ class TestUnregister:
     def test_unregister_removes_participant(self, client):
         """Test that unregister actually removes the participant."""
         email = "removetest@mergington.edu"
-        client.post(f"/activities/Debate Society/signup?email={email}")
-        client.delete(f"/activities/Debate Society/unregister?email={email}")
+        client.post(f"/activities/{quote('Debate Society')}/signup?email={email}")
+        client.delete(f"/activities/{quote('Debate Society')}/unregister?email={email}")
         
         response = client.get("/activities")
         assert email not in response.json()["Debate Society"]["participants"]
@@ -129,7 +131,7 @@ class TestUnregister:
     def test_unregister_activity_not_found(self, client):
         """Test unregister from non-existent activity returns 404."""
         response = client.delete(
-            "/activities/Nonexistent Activity/unregister?email=test@mergington.edu"
+            f"/activities/{quote('Nonexistent Activity')}/unregister?email=test@mergington.edu"
         )
         assert response.status_code == 404
         assert "Activity not found" in response.json()["detail"]
@@ -137,7 +139,7 @@ class TestUnregister:
     def test_unregister_not_registered(self, client):
         """Test unregister when not registered returns 400."""
         response = client.delete(
-            "/activities/Programming Class/unregister?email=notregistered@mergington.edu"
+            f"/activities/{quote('Programming Class')}/unregister?email=notregistered@mergington.edu"
         )
         assert response.status_code == 400
         assert "not registered" in response.json()["detail"]
